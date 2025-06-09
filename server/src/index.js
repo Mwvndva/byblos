@@ -7,8 +7,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env file in the server directory
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load environment variables
+const envPath = process.env.NODE_ENV === 'production' 
+  ? path.resolve(__dirname, '../.env.production')
+  : path.resolve(__dirname, '../../.env');
+
+dotenv.config({ path: envPath });
 
 // Debug log environment variables (without sensitive data)
 console.log('Environment variables loaded:');
