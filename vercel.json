@@ -1,19 +1,19 @@
 {
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://byblos-atelier-api.onrender.com/api/$1"
-    },
-    {
-      "source": "/seller/(.*)",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://byblos-atelier-api.onrender.com/api/$1"
+    },
     {
       "src": "/_next/static/(?:[^/]+/pages|pages|chunks|runtime|css|media)/.+",
       "headers": {
@@ -33,16 +33,17 @@
       }
     },
     {
-      "src": "/api/(.*)",
-      "dest": "https://byblos-atelier-api.onrender.com/api/$1"
-    },
-    {
       "src": "/seller/(.*)",
-      "dest": "/"
+      "dest": "/index.html"
     },
     {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/index.html"
     }
+  ],
+  "rewrites": [
+    { "source": "/seller/:path*", "destination": "/" },
+    { "source": "/:path*", "destination": "/" },
+    { "source": "/", "destination": "/index.html" }
   ]
 }
