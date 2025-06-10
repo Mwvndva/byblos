@@ -170,7 +170,7 @@ export const sellerApi = {
       }
       
       localStorage.setItem('sellerToken', token);
-      return { seller: transformSeller(seller), token };
+      return { seller: transformSeller(response.data.seller), token: response.data.token };
     } catch (error: any) {
       console.error('Registration error:', error);
       if (error.response?.data?.message) {
@@ -182,13 +182,13 @@ export const sellerApi = {
 
   // Products
   createProduct: async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'isSold'>): Promise<Product> => {
-    const response = await sellerApiInstance.post('/seller/products', product);
+    const response = await sellerApiInstance.post('/sellers/products', product);
     return transformProduct(response.data);
   },
 
   getProducts: async (): Promise<Product[]> => {
     try {
-      const response = await sellerApiInstance.get('/seller/products');
+      const response = await sellerApiInstance.get('/sellers/products');
       const { data } = response.data;
       return (data?.products || []).map(transformProduct);
     } catch (error: any) {
@@ -207,7 +207,7 @@ export const sellerApi = {
 
   getProduct: async (id: string): Promise<Product> => {
     try {
-      const response = await sellerApiInstance.get(`/seller/products/${id}`);
+      const response = await sellerApiInstance.get(`/sellers/products/${id}`);
       const { data } = response.data;
       if (!data) {
         throw new Error('Product not found');
