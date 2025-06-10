@@ -152,11 +152,11 @@ const sellerRoutes = [
       // Redirects
       {
         path: '',
-        element: <Navigate to="/seller/dashboard" replace />,
+        element: <Navigate to="dashboard" replace />,
       },
       {
         path: '*',
-        element: <Navigate to="/seller/dashboard" replace />,
+        element: <Navigate to="dashboard" replace />,
       },
     ],
   },
@@ -165,5 +165,7 @@ const sellerRoutes = [
 // Export the routes array for use in the main router
 export { sellerRoutes };
 
-// Create and export the browser router
-export const sellerRouter = createBrowserRouter(sellerRoutes);
+// Create and export the browser router with basename
+export const sellerRouter = createBrowserRouter(sellerRoutes, {
+  basename: import.meta.env.BASE_URL || '/',
+});
