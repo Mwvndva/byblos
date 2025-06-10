@@ -11,6 +11,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/seller/(.*)",
+      "destination": "https://byblos-atelier-api.onrender.com/api/seller/$1"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "https://byblos-atelier-api.onrender.com/api/$1"
     },
