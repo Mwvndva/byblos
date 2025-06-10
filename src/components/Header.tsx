@@ -30,9 +30,9 @@ const Header = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="hidden md:flex hover:bg-black hover:text-white transition-colors"
+                className="flex items-center justify-center hover:bg-black hover:text-white transition-colors"
               >
-                Become a Seller
+                <span className="text-sm font-medium">Become a Seller</span>
               </Button>
             </Link>
           </div>
