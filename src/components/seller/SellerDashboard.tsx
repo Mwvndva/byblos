@@ -3,7 +3,6 @@ import { useNavigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Home, Package, Plus, Settings, PlusCircle, DollarSign, Box, Eye, EyeOff } from 'lucide-react';
 import ProductsList from './ProductsList';
 import { sellerApi } from '@/api/sellerApi';
@@ -37,26 +36,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-  
-  // Get current tab from URL
-  useEffect(() => {
-    const path = location.pathname.split('/').pop() || 'dashboard';
-    console.log('Current path:', path, 'Full path:', location.pathname);
-    
-    // Map route paths to tab values
-    const tabMap: {[key: string]: string} = {
-      'dashboard': 'overview',
-      'products': 'products',
-      'orders': 'orders',
-      'add-product': 'add-product',
-      'settings': 'settings'
-    };
-    
-    const tab = tabMap[path] || 'overview';
-    console.log('Setting active tab to:', tab);
-    setActiveTab(tab);
-  }, [location]);
+
 
   // Calculate analytics from products
   const calculateAnalytics = (products: Product[]): AnalyticsData => {
@@ -218,8 +198,6 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ children }) => {
     }
   };
 
-
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -227,7 +205,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ children }) => {
       </div>
     );
   }
-  
+
   if (!analytics) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -240,7 +218,7 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ children }) => {
   const outletContext = {
     products,
     onDeleteProduct: handleDeleteProduct,
-    fetchData
+    fetchData,
   };
 
   // If children are provided, render them with the fetchData function
@@ -252,10 +230,9 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ children }) => {
     );
   }
 
-  // Otherwise, render the full dashboard with tabs
+  // Render the dashboard
   return (
     <div className="space-y-6">
-      {/* Header with back button */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Button
@@ -267,101 +244,62 @@ const SellerDashboard: React.FC<SellerDashboardProps> = ({ children }) => {
             <Home className="h-4 w-4 mr-2" />
             Back to Home
           </Button>
-          <h1 className="text-2xl font-bold">Seller Dashboard</h1>
           <div className="w-24"></div> {/* For balance */}
         </div>
 
-        <Tabs 
-          value={activeTab} 
-          onValueChange={(value) => {
-            console.log('Tab changed to:', value);
-            const path = value === 'overview' ? '/seller/dashboard' : `/seller/${value}`;
-            navigate(path);
-          }}
-          className="w-full"
-          defaultValue="overview"
-        >
-          <TabsList className="flex w-full space-x-2 overflow-x-auto py-1">
-            <TabsTrigger value="overview" className="flex-1">
-              <Home className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="products" className="flex-1">
-              <Package className="h-4 w-4 mr-2" />
-              Products
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex-1">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Orders
-            </TabsTrigger>
-            <TabsTrigger value="add-product" className="flex-1">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Product
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Tab content is now handled by the router's Outlet */}
-          <div className="mt-6">
-            <Outlet context={outletContext} />
-          </div>
-          
-          {/* Keep the analytics cards in the overview tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{analytics.totalProducts}</div>
-                    <p className="text-xs text-muted-foreground">Total products in your store</p>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Recent Products */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Products</CardTitle>
-                  <CardDescription>Your most recently added products</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {products.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {products.slice(0, 3).map((product) => (
-                        <div key={product.id} className="border rounded-lg p-4">
-                          <div className="aspect-square bg-gray-100 rounded-md overflow-hidden mb-3">
-                            {product.image_url ? (
-                              <img 
-                                src={product.image_url} 
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                <Package className="h-8 w-8 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <h3 className="font-medium">{product.name}</h3>
-                          <p className="text-sm text-gray-500">{formatCurrency(product.price)}</p>
+        <div className="mt-6">
+          <Outlet context={outletContext} />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.totalProducts}</div>
+              <p className="text-xs text-muted-foreground">Total products in your store</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Products</CardTitle>
+            <CardDescription>Your most recently added products</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {products.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {products.slice(0, 3).map((product) => (
+                  <div key={product.id} className="border rounded-lg p-4">
+                    <div className="aspect-square bg-gray-100 rounded-md overflow-hidden mb-3">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                          <Package className="h-8 w-8 text-gray-400" />
                         </div>
-                      ))}
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-center text-gray-500 py-8">No products found. Add your first product to get started.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </Tabs>
+                    <h3 className="font-medium text-gray-900">{product.name}</h3>
+                    <p className="text-sm text-gray-500">{product.aesthetic}</p>
+                    <p className="text-sm font-medium text-gray-900">{formatCurrency(product.price)}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-8">No products found. Add your first product to get started.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

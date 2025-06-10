@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useOutletContext, useNavigate } from 'react-router-dom';
 import { SellerLayout } from '../components/layout/SellerLayout';
 import SellerDashboard from '../components/seller/SellerDashboard';
@@ -8,30 +9,262 @@ import AddProductForm from '../components/seller/AddProductForm';
 import { EditProductForm } from '../components/seller/EditProductForm';
 import SellerSettings from '../components/seller/SellerSettings';
 import { Button } from '../components/ui/button';
+import { useToast } from '../hooks/use-toast';
+import { sellerApi } from '../api/sellerApi';
 import SellerOrdersPage from '../pages/seller/SellerOrdersPage';
+import { Plus, Pencil, Trash2, EyeOff, RefreshCw, CheckCircle } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { formatCurrency } from '../lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 
 // Products route component that will be rendered within the dashboard
 function ProductsListWrapper() {
-  // This component will be rendered within SellerDashboard which provides the context
-  const { products, onDeleteProduct } = useOutletContext<{
-    products: any[];
-    onDeleteProduct: (id: string) => Promise<void>;
-  }>();
-  
   const navigate = useNavigate();
-  
+  const { toast } = useToast();
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [statusUpdate, setStatusUpdate] = useState<{
+    productId: string | null;
+    isOpen: boolean;
+    isSold: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await sellerApi.getProducts();
+        setProducts(response);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast({
+          title: 'Error loading products',
+          description: 'Failed to load products. Please try again later.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await sellerApi.deleteProduct(id);
+        // Refresh the products list
+        const response = await sellerApi.getProducts();
+        setProducts(response);
+        toast({
+          title: 'Success',
+          description: 'Product deleted successfully',
+        });
+      } catch (error) {
+        console.error('Failed to delete product:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete product',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
   const handleEdit = (id: string) => {
     navigate(`/seller/products/${id}/edit`);
   };
 
+  const handleAddProduct = () => {
+    navigate('/seller/add-product');
+  };
+
+  const handleStatusUpdate = async (productId: string, isSold: boolean) => {
+    try {
+      // Start with optimistic update
+      setProducts(products.map(product => 
+        product.id === productId ? {
+          ...product,
+          status: isSold ? 'sold' : 'available',
+          isSold,
+          soldAt: isSold ? new Date().toISOString() : null
+        } : product
+      ));
+
+      // Update the server
+      await sellerApi.updateProduct(productId, {
+        status: isSold ? 'sold' : 'available',
+        isSold,
+        soldAt: isSold ? new Date().toISOString() : null
+      });
+
+      toast({
+        title: 'Success',
+        description: isSold ? 'Product marked as sold' : 'Product marked as available',
+      });
+      setStatusUpdate(null);
+    } catch (error) {
+      // If there's an error, revert the local state
+      setProducts(products.map(product => 
+        product.id === productId ? {
+          ...product,
+          status: isSold ? 'available' : 'sold',
+          isSold: !isSold,
+          soldAt: isSold ? null : product.soldAt
+        } : product
+      ));
+
+      console.error('Failed to update product status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update product status. Changes have been reverted.',
+        variant: 'destructive',
+      });
+      setStatusUpdate(null);
+    }
+  };
+
+  const handleOpenStatusDialog = (productId: string, isSold: boolean) => {
+    setStatusUpdate({ productId, isOpen: true, isSold });
+  };
+
+  const handleCloseStatusDialog = () => {
+    setStatusUpdate(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">My Products</h2>
-      <ProductsList 
-        products={products || []}
-        onDelete={onDeleteProduct}
-        onEdit={handleEdit}
-      />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">My Products</h2>
+        <Button
+          onClick={handleAddProduct}
+          className="bg-indigo-600 hover:bg-indigo-700"
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Add Product
+        </Button>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {products.map((product) => (
+          <Card key={product.id} className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{product.name}</CardTitle>
+              <Badge
+                variant={
+                  product.status === 'available' ? 'default' :
+                  product.status === 'sold' ? 'destructive' :
+                  'secondary'
+                }
+              >
+                {product.status?.toUpperCase() || 'AVAILABLE'}
+              </Badge>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <div className="aspect-square bg-gray-100 rounded-md overflow-hidden relative">
+                {product.image_url ? (
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <EyeOff className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">{product.aesthetic}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(product.price)}</p>
+                <p className="text-sm text-gray-500">{new Date(product.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(product.id)}
+                  className="flex items-center space-x-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  <span>Edit</span>
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onDelete(product.id)}
+                  className="flex items-center space-x-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete</span>
+                </Button>
+                {product.status === 'available' ? (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleOpenStatusDialog(product.id, true)}
+                    className="flex items-center space-x-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark as Sold</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleOpenStatusDialog(product.id, false)}
+                    className="flex items-center space-x-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Mark as Available</span>
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {statusUpdate && (
+        <AlertDialog open={statusUpdate.isOpen} onOpenChange={handleCloseStatusDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {statusUpdate.isSold ? 'Mark as Sold' : 'Mark as Available'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to {statusUpdate.isSold ? 'mark this product as sold' : 'mark this product as available'}?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => handleStatusUpdate(statusUpdate.productId, statusUpdate.isSold)}
+              >
+                {statusUpdate.isSold ? 'Mark as Sold' : 'Mark as Available'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
@@ -92,59 +325,27 @@ const sellerRoutes = [
           },
           {
             path: 'products',
-            element: <SellerDashboard />,
-            children: [
-              {
-                index: true,
-                element: <ProductsListWrapper />
-              },
-              {
-                path: ':id/edit',
-                element: (
-                  <SellerDashboard>
-                    {({ fetchData }) => (
-                      <EditProductForm onSuccess={fetchData} />
-                    )}
-                  </SellerDashboard>
-                ),
-              },
-            ],
+            element: <ProductsListWrapper />,
+          },
+          {
+            path: 'products/:id/edit',
+            element: (
+              <EditProductForm onSuccess={() => {}} />
+            ),
           },
           {
             path: 'add-product',
-            element: <SellerDashboard />,
-            children: [
-              {
-                index: true,
-                element: (
-                  <SellerDashboard>
-                    {({ fetchData }) => (
-                      <AddProductForm onSuccess={fetchData} />
-                    )}
-                  </SellerDashboard>
-                ),
-              },
-            ],
+            element: (
+              <AddProductForm onSuccess={() => {}} />
+            ),
           },
           {
             path: 'settings',
-            element: <SellerDashboard />,
-            children: [
-              {
-                index: true,
-                element: <SellerSettings />,
-              },
-            ],
+            element: <SellerSettings />,
           },
           {
             path: 'orders',
-            element: <SellerDashboard />,
-            children: [
-              {
-                index: true,
-                element: <SellerOrdersPage />,
-              },
-            ],
+            element: <SellerOrdersPage />,
           },
         ],
       },

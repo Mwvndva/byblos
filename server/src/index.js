@@ -97,7 +97,7 @@ const startServer = async () => {
     // Test database connection before starting the server
     await testConnection();
     
-    const port = process.env.PORT || 3001;
+    const port = process.env.PORT || 3000;
     const server = app.listen(port, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
       console.log(`📡 API available at http://localhost:${port}/api`);
