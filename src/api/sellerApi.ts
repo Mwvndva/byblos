@@ -182,20 +182,21 @@ export const sellerApi = {
 
   // Products
   createProduct: async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'isSold'>): Promise<Product> => {
-    const response = await sellerApiInstance.post('/sellers/products', product);
+    const response = await sellerApiInstance.post('/seller/products', product);
     return transformProduct(response.data);
   },
 
   getProducts: async (): Promise<Product[]> => {
     try {
-      const response = await sellerApiInstance.get('/sellers/products');
+      const response = await sellerApiInstance.get('/seller/products');
       const { data } = response.data;
       return (data?.products || []).map(transformProduct);
     } catch (error: any) {
       console.error('Error fetching products:', {
         error: error.message,
         response: error.response?.data,
-        status: error.response?.status
+        status: error.response?.status,
+        config: error.config
       });
       if (error.response?.data?.message) {
         throw new Error(error.response.data.message);
@@ -206,10 +207,10 @@ export const sellerApi = {
 
   getProduct: async (id: string): Promise<Product> => {
     try {
-      const response = await sellerApiInstance.get(`/sellers/products/${id}`);
+      const response = await sellerApiInstance.get(`/seller/products/${id}`);
       const { data } = response.data;
       if (!data) {
-        throw new Error('No product data received');
+        throw new Error('Product not found');
       }
       return transformProduct(data);
     } catch (error: any) {
@@ -222,12 +223,12 @@ export const sellerApi = {
   },
 
   updateProduct: async (id: string, updates: Partial<Product>): Promise<Product> => {
-    const response = await sellerApiInstance.patch(`/sellers/products/${id}`, updates);
+    const response = await sellerApiInstance.patch(`/seller/products/${id}`, updates);
     return transformProduct(response.data);
   },
 
   deleteProduct: async (id: string): Promise<void> => {
-    await sellerApiInstance.delete(`/sellers/products/${id}`);
+    await sellerApiInstance.delete(`/seller/products/${id}`);
   },
 
   // Seller
