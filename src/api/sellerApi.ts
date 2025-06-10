@@ -223,12 +223,12 @@ export const sellerApi = {
   },
 
   updateProduct: async (id: string, updates: Partial<Product>): Promise<Product> => {
-    const response = await sellerApiInstance.patch(`/seller/products/${id}`, updates);
+    const response = await sellerApiInstance.patch(`/sellers/products/${id}`, updates);
     return transformProduct(response.data);
   },
 
   deleteProduct: async (id: string): Promise<void> => {
-    await sellerApiInstance.delete(`/seller/products/${id}`);
+    await sellerApiInstance.delete(`/sellers/products/${id}`);
   },
 
   // Seller
