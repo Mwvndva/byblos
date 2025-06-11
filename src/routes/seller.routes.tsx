@@ -4,7 +4,7 @@ import { SellerLayout } from '../components/layout/SellerLayout';
 import SellerDashboard from '../components/seller/SellerDashboard';
 import SellerRegistration from '../components/seller/SellerRegistration';
 import { SellerLogin } from '../components/seller/SellerLogin';
-import ProductsList from '../components/seller/ProductsList';
+import { ProductsList } from '../components/seller/ProductsList';
 import AddProductForm from '../components/seller/AddProductForm';
 import { EditProductForm } from '../components/seller/EditProductForm';
 import SellerSettings from '../components/seller/SellerSettings';
@@ -163,85 +163,30 @@ function ProductsListWrapper() {
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <Card key={product.id} className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{product.name}</CardTitle>
-              <Badge
-                variant={
-                  product.status === 'available' ? 'default' :
-                  product.status === 'sold' ? 'destructive' :
-                  'secondary'
-                }
-              >
-                {product.status?.toUpperCase() || 'AVAILABLE'}
-              </Badge>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <div className="aspect-square bg-gray-100 rounded-md overflow-hidden relative">
-                {product.image_url ? (
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                    <EyeOff className="h-12 w-12 text-gray-400" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-500">{product.aesthetic}</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(product.price)}</p>
-                <p className="text-sm text-gray-500">{new Date(product.createdAt).toLocaleDateString()}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEdit(product.id)}
-                  className="flex items-center space-x-2"
-                >
-                  <Pencil className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDelete(product.id)}
-                  className="flex items-center space-x-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Delete</span>
-                </Button>
-                {product.status === 'available' ? (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleOpenStatusDialog(product.id, true)}
-                    className="flex items-center space-x-2"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Mark as Sold</span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleOpenStatusDialog(product.id, false)}
-                    className="flex items-center space-x-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    <span>Mark as Available</span>
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <ProductsList 
+        products={products} 
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+        onStatusUpdate={async (productId, status, soldAt) => {
+          await handleStatusUpdate(productId, status === 'sold');
+        }}
+        onRefresh={() => {
+          const fetchProducts = async () => {
+            try {
+              const response = await sellerApi.getProducts();
+              setProducts(response);
+            } catch (error) {
+              console.error('Error fetching products:', error);
+              toast({
+                title: 'Error loading products',
+                description: 'Failed to load products. Please try again later.',
+                variant: 'destructive',
+              });
+            }
+          };
+          fetchProducts();
+        }}
+      />
 
       {statusUpdate && (
         <AlertDialog open={statusUpdate.isOpen} onOpenChange={handleCloseStatusDialog}>

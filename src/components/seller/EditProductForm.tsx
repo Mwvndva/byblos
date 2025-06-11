@@ -47,11 +47,11 @@ export const EditProductForm: React.FC<EditProductFormProps> = ({ onSuccess }) =
       try {
         const product = await sellerApi.getProduct(id);
         setFormData({
-          name: product.name,
-          price: product.price.toString(),
-          description: product.description,
+          name: product.name || '',
+          price: (product.price ?? 0).toString(),
+          description: product.description || '',
           image: null,
-          image_url: product.image_url,
+          image_url: product.image_url || '',
           aesthetic: product.aesthetic || 'afro-futuristic'
         });
         setImagePreview(product.image_url);

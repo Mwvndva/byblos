@@ -7,7 +7,6 @@ import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom"
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { sellerRoutes } from "./routes/seller.routes";
-
 const queryClient = new QueryClient();
 
 // Base path for the application
