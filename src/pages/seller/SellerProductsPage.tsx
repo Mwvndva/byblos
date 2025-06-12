@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import ProductsList from '@/components/seller/ProductsList';
+import { ProductsList } from '@/components/seller/ProductsList';
 import { sellerApi } from '@/api/sellerApi';
 import { toast } from '@/components/ui/sonner';
 import { SellerLayout } from '@/components/layout/SellerLayout';
